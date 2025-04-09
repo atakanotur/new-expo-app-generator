@@ -120,17 +120,24 @@ export const useAppStore = create<AppState>((set) => ({
   fs.writeFileSync(
     "source/utils/i18n.ts",
     `
-import * as Localization from 'expo-localization';
-import i18n from 'i18n-js';
-
-import en from '@locales/en.json';
-import tr from '@locales/tr.json';
-
-i18n.fallbacks = true;
-i18n.translations = { en, tr };
-i18n.locale = Localization.locale || 'en';
-
-export default i18n;
+    import * as Localization from "expo-localization";
+    import { I18n } from "i18n-js";
+    
+    import fr from "@locales/en.json";
+    import tr from "@locales/tr.json";
+    
+    const i18n = new I18n({
+      fr,
+      "en-TR": tr,
+      "tr-TR": tr,
+      "en-US": tr,
+    });
+    
+    i18n.locale = Localization.getLocales()[0].languageTag;
+    i18n.enableFallback = true;
+    
+    export default i18n;
+    
   `.trim()
   );
 
@@ -239,7 +246,7 @@ export default function Index() {
 
   // babel.config.js ayarı
   console.log("🧠 babel.config.js expo-router için güncelleniyor...");
-  const babelPath = "babel.config.tjs";
+  const babelPath = "babel.config.js";
 
   let babelContent = "";
 
