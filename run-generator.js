@@ -49,10 +49,6 @@ try {
   console.log("🗑️ App.tsx kaldırılıyor (expo-router kullanılıyor)...");
   fs.rmSync("App.tsx", { force: true });
 
-  //index.ts siliniyor
-  console.log("🗑️ index.ts kaldırılıyor...");
-  fs.rmSync("index.ts", { force: true });
-
   // Kütüphaneler npm ile yükleniyor
   console.log("📦 Paketler npm ile yükleniyor...");
   execSync(`npm install ${packages.join(" ")}`, { stdio: "inherit" });
@@ -77,6 +73,26 @@ try {
   folders.forEach((folder) => {
     fs.mkdirSync(path.join("source", folder), { recursive: true });
   });
+
+  // expo-router app/ klasörü
+  console.log("📂 app/ klasörü oluşturuluyor (expo-router)...");
+  fs.mkdirSync("app", { recursive: true });
+
+  fs.writeFileSync(
+    "app/+layout.tsx",
+    `
+import { Slot } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+export default function Layout() {
+  return (
+    <SafeAreaProvider>
+      <Slot />
+    </SafeAreaProvider>
+  );
+}
+`.trim()
+  );
 
   //components
   console.log(
@@ -144,6 +160,165 @@ try {
   `.trim()
   );
 
+  // constants/colors
+  fs.mkdirSync("source/constants", { recursive: true });
+  fs.writeFileSync(
+    "source/constants/colors.ts",
+    `
+const colors = {
+  primary: "#007AFF",
+  secondary: "#5856D6",
+  background: "#FFFFFF",
+  text: "#000000",
+  muted: "#6e6e6e",
+};
+
+export default colors;
+`.trim()
+  );
+
+  //theme
+  console.log("🎨 Theme sistemi kuruluyor...");
+
+  const themeDir = path.join("source", "theme");
+  fs.mkdirSync(themeDir, { recursive: true });
+
+  // light.ts
+  fs.writeFileSync(
+    path.join(themeDir, "light.ts"),
+    `
+export const lightTheme = {
+  colors: {
+    background: "#ffffff",
+    text: "#000000",
+    primary: "#007AFF",
+    secondary: "#5856D6",
+  },
+};
+`.trim()
+  );
+
+  // dark.ts
+  fs.writeFileSync(
+    path.join(themeDir, "dark.ts"),
+    `
+export const darkTheme = {
+  colors: {
+    background: "#000000",
+    text: "#ffffff",
+    primary: "#0A84FF",
+    secondary: "#5E5CE6",
+  },
+};
+`.trim()
+  );
+
+  // spacing.ts
+  fs.writeFileSync(
+    path.join(themeDir, "spacing.ts"),
+    `
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+};
+`.trim()
+  );
+
+  // typography.ts
+  fs.writeFileSync(
+    path.join(themeDir, "typography.ts"),
+    `
+export const typography = {
+  fontFamily: "System",
+  fontSize: {
+    sm: 14,
+    md: 16,
+    lg: 20,
+    xl: 24,
+  },
+  fontWeight: {
+    regular: "400",
+    bold: "700",
+  },
+};
+`.trim()
+  );
+
+  // ThemeProvider.tsx
+  fs.writeFileSync(
+    path.join(themeDir, "ThemeProvider.tsx"),
+    `
+import React, { createContext, useContext, useState, ReactNode } from "react";
+import { lightTheme } from "./light";
+import { darkTheme } from "./dark";
+
+export const ThemeContext = createContext({
+  theme: lightTheme,
+  toggleTheme: () => {},
+});
+
+export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  const [isDark, setIsDark] = useState(false);
+
+  const toggleTheme = () => setIsDark((prev) => !prev);
+  const theme = isDark ? darkTheme : lightTheme;
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+`.trim()
+  );
+
+  // useTheme.ts
+  fs.writeFileSync(
+    path.join(themeDir, "useTheme.ts"),
+    `
+import { useContext } from "react";
+import { ThemeContext } from "./ThemeProvider";
+
+export const useTheme = () => useContext(ThemeContext);
+`.trim()
+  );
+
+  // index.ts
+  fs.writeFileSync(
+    path.join(themeDir, "index.ts"),
+    `
+export * from "./light";
+export * from "./dark";
+export * from "./spacing";
+export * from "./typography";
+export * from "./ThemeProvider";
+export * from "./useTheme";
+`.trim()
+  );
+
+  // app/+layout.tsx güncelle
+  fs.writeFileSync(
+    "app/+layout.tsx",
+    `
+  import { Slot } from 'expo-router';
+  import { SafeAreaProvider } from 'react-native-safe-area-context';
+  import { ThemeProvider } from '@theme';
+  
+  export default function Layout() {
+    return (
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <Slot />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+  }
+  `.trim()
+  );
+
   // .env
   console.log("📄 .env dosyası oluşturuluyor...");
   fs.writeFileSync(
@@ -171,6 +346,26 @@ try {
     env: "development",
   };
   fs.writeFileSync(appJsonPath, JSON.stringify(appJson, null, 2));
+
+  //app/+layout.tsx güncelle
+  fs.writeFileSync(
+    "app/+layout.tsx",
+    `
+  import { Slot } from 'expo-router';
+  import { SafeAreaProvider } from 'react-native-safe-area-context';
+  import { ThemeProvider } from '@theme';
+  
+  export default function Layout() {
+    return (
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <Slot />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+  }
+  `.trim()
+  );
 
   // Zustand store
   console.log("🧠 Zustand store oluşturuluyor...");
@@ -269,37 +464,6 @@ export default function HomeScreen() {
   );
 }
   `.trim()
-  );
-
-  // expo-router app/ klasörü
-  console.log("📂 app/ klasörü oluşturuluyor (expo-router)...");
-  fs.mkdirSync("app", { recursive: true });
-
-  fs.writeFileSync(
-    "app/+layout.tsx",
-    `
-import { Slot } from 'expo-router';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-
-export default function Layout() {
-  return (
-    <SafeAreaProvider>
-      <Slot />
-    </SafeAreaProvider>
-  );
-}
-`.trim()
-  );
-
-  fs.writeFileSync(
-    "app/index.tsx",
-    `
-import HomeScreen from '@screens/HomeScreen';
-
-export default function Index() {
-  return <HomeScreen />;
-}
-`.trim()
   );
 
   // tsconfig alias path'leri (source klasörüne göre)
