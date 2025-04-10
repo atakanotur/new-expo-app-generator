@@ -39,9 +39,19 @@ try {
 
   process.chdir(appName);
 
+  //react ve react-test-renderer
+  console.log("🔄 React 18.3.1 ve react-test-renderer kuruluyor...");
+  execSync(`npm install react@18.3.1 react-test-renderer@18.3.1`, {
+    stdio: "inherit",
+  });
+
   // App.tsx siliniyor
   console.log("🗑️ App.tsx kaldırılıyor (expo-router kullanılıyor)...");
   fs.rmSync("App.tsx", { force: true });
+
+  //index.ts siliniyor
+  console.log("🗑️ index.ts kaldırılıyor...");
+  fs.rmSync("index.ts", { force: true });
 
   // Kütüphaneler npm ile yükleniyor
   console.log("📦 Paketler npm ile yükleniyor...");
@@ -273,6 +283,48 @@ export default function Index() {
     );
     fs.writeFileSync(babelPath, babelContent);
   }
+
+  // Test bağımlılıkları
+  console.log("🧪 Test ortamı kuruluyor (Jest + Testing Library)...");
+
+  execSync(
+    `npm install --save-dev jest jest-expo @testing-library/react-native@13.1.0 @testing-library/jest-native @types/jest ts-jest`,
+    { stdio: "inherit" }
+  );
+
+  fs.writeFileSync(
+    "jest.config.js",
+    `
+  module.exports = {
+    preset: "jest-expo",
+    setupFilesAfterEnv: ["@testing-library/jest-native/extend-expect"],
+    transformIgnorePatterns: [
+      "node_modules/(?!(jest-)?react-native|@react-native|@react-navigation|expo(nent)?|@expo|@unimodules|sentry-expo|native-base)"
+    ],
+    testMatch: ["**/__tests__/**/*.test.ts?(x)"],
+  };
+  `.trim()
+  );
+
+  fs.mkdirSync("source/__tests__", { recursive: true });
+  fs.writeFileSync(
+    "source/__tests__/App.test.tsx",
+    `
+import React from "react";
+import { render } from "@testing-library/react-native";
+import HomeScreen from "@screens/HomeScreen";
+
+describe("HomeScreen", () => {
+  it("renders welcome text", () => {
+    const { getByText } = render(<HomeScreen />);
+    expect(getByText(/hoş geldin|welcome/i)).toBeTruthy();
+  });
+});
+`.trim()
+  );
+
+  pkgJson.scripts.test = "jest";
+  fs.writeFileSync(pkgJsonPath, JSON.stringify(pkgJson, null, 2));
 
   // Git init
   console.log("🔧 Git başlatılıyor...");
