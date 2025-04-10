@@ -78,6 +78,72 @@ try {
     fs.mkdirSync(path.join("source", folder), { recursive: true });
   });
 
+  //components
+  console.log(
+    "📁 Atomic Design yapısına uygun component klasörleri oluşturuluyor..."
+  );
+
+  const atomicFolders = ["atoms", "molecules", "organisms"];
+  atomicFolders.forEach((folder) => {
+    fs.mkdirSync(path.join("source", "components", folder), {
+      recursive: true,
+    });
+  });
+
+  fs.writeFileSync(
+    "source/components/atoms/Button.tsx",
+    `
+  import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+  
+  type Props = {
+    label: string;
+    onPress: () => void;
+  };
+  
+  export default function Button({ label, onPress }: Props) {
+    return (
+      <TouchableOpacity style={styles.btn} onPress={onPress}>
+        <Text style={styles.text}>{label}</Text>
+      </TouchableOpacity>
+    );
+  }
+  
+  const styles = StyleSheet.create({
+    btn: {
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: "#007AFF",
+    },
+    text: {
+      color: "#fff",
+      fontWeight: "600",
+    },
+  });
+  `.trim()
+  );
+
+  fs.writeFileSync(
+    "source/components/atoms/index.ts",
+    `export { default as Button } from './Button';`
+  );
+  fs.writeFileSync(
+    "source/components/molecules/index.ts",
+    `// export { default as Form } from './Form';`
+  );
+  fs.writeFileSync(
+    "source/components/organisms/index.ts",
+    `// export { default as Header } from './Header';`
+  );
+
+  fs.writeFileSync(
+    "source/components/index.ts",
+    `
+  export * from './atoms';
+  export * from './molecules';
+  export * from './organisms';
+  `.trim()
+  );
+
   // .env
   console.log("📄 .env dosyası oluşturuluyor...");
   fs.writeFileSync(
