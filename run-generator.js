@@ -105,11 +105,13 @@ export default function Layout() {
       recursive: true,
     });
   });
-
+  //button
   fs.writeFileSync(
     "source/components/atoms/Button.tsx",
     `
-  import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+  import React from "react";
+  import { TouchableOpacity, Text, StyleSheet } from "react-native";
+  import { useTheme } from "@theme";
   
   type Props = {
     label: string;
@@ -117,38 +119,231 @@ export default function Layout() {
   };
   
   export default function Button({ label, onPress }: Props) {
+    const { theme, toggleTheme } = useTheme();
+  
     return (
-      <TouchableOpacity style={styles.btn} onPress={onPress}>
-        <Text style={styles.text}>{label}</Text>
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: theme.colors.primary }]}
+        onPress={onPress}
+        onLongPress={toggleTheme}
+      >
+        <Text style={[styles.text, { color: theme.colors.text }]}>{label}</Text>
       </TouchableOpacity>
     );
   }
   
   const styles = StyleSheet.create({
-    btn: {
-      padding: 12,
+    button: {
+      paddingVertical: 12,
+      paddingHorizontal: 24,
       borderRadius: 8,
-      backgroundColor: "#007AFF",
+      margin: 8,
     },
     text: {
-      color: "#fff",
+      fontSize: 16,
       fontWeight: "600",
     },
   });
   `.trim()
   );
 
+  //text
+  fs.writeFileSync(
+    "source/components/atoms/Text.tsx",
+    `
+  import React from "react";
+  import { Text as RNText, StyleSheet, TextProps as RNTextProps } from "react-native";
+  import { useTheme } from "@theme";
+  
+  type Props = RNTextProps & {
+    children: React.ReactNode;
+  };
+  
+  export default function Text({ children, style, ...rest }: Props) {
+    const { theme } = useTheme();
+  
+    return (
+      <RNText
+        style={[styles.text, { color: theme.colors.text }, style]}
+        {...rest}
+      >
+        {children}
+      </RNText>
+    );
+  }
+  
+  const styles = StyleSheet.create({
+    text: {
+      fontSize: 16,
+      fontFamily: "System",
+    },
+  });
+  `.trim()
+  );
+
+  //input
+  fs.writeFileSync(
+    "source/components/atoms/Input.tsx",
+    `
+  import React from "react";
+  import { TextInput, StyleSheet, TextInputProps } from "react-native";
+  import { useTheme } from "@theme";
+  
+  export default function Input(props: TextInputProps) {
+    const { theme } = useTheme();
+  
+    return (
+      <TextInput
+        placeholderTextColor={theme.colors.text + "88"}
+        style={[styles.input, {
+          backgroundColor: theme.colors.background,
+          color: theme.colors.text,
+          borderColor: theme.colors.primary,
+        }]}
+        {...props}
+      />
+    );
+  }
+  
+  const styles = StyleSheet.create({
+    input: {
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderWidth: 1,
+      borderRadius: 6,
+      fontSize: 16,
+      marginVertical: 8,
+    },
+  });
+  `.trim()
+  );
+
+  //spacer
+  fs.writeFileSync(
+    "source/components/atoms/Spacer.tsx",
+    `
+  import React from "react";
+  import { View } from "react-native";
+  
+  type Props = {
+    height?: number;
+    width?: number;
+  };
+  
+  export default function Spacer({ height = 8, width = 0 }: Props) {
+    return <View style={{ height, width }} />;
+  }
+  `.trim()
+  );
+
   fs.writeFileSync(
     "source/components/atoms/index.ts",
-    `export { default as Button } from './Button';`
+    `
+  export { default as Button } from './Button';
+  export { default as Text } from './Text';
+  export { default as Input } from './Input';
+  export { default as Spacer } from './Spacer';
+  `.trim()
   );
+
+  //molecules
+
+  //loginform
+  fs.writeFileSync(
+    "source/components/molecules/LoginForm.tsx",
+    `
+  import React, { useState } from "react";
+  import { View } from "react-native";
+  import { Input, Button, Text, Spacer } from "@components";
+  
+  type Props = {
+    onLogin: (email: string, password: string) => void;
+  };
+  
+  export default function LoginForm({ onLogin }: Props) {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+  
+    return (
+      <View>
+        <Text>Email</Text>
+        <Input value={email} onChangeText={setEmail} placeholder="Enter email" />
+        <Spacer height={12} />
+        <Text>Password</Text>
+        <Input
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Enter password"
+          secureTextEntry
+        />
+        <Spacer height={16} />
+        <Button label="Login" onPress={() => onLogin(email, password)} />
+      </View>
+    );
+  }
+  `.trim()
+  );
+
   fs.writeFileSync(
     "source/components/molecules/index.ts",
-    `// export { default as Form } from './Form';`
+    `export { default as LoginForm } from './LoginForm';`
   );
+
+  //organisms
+
+  //header
+  fs.writeFileSync(
+    "source/components/organisms/Header.tsx",
+    `
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { Text, Spacer } from "@components";
+import { useTheme } from "@theme";
+
+type Props = {
+  title: string;
+  subtitle?: string;
+};
+
+export default function Header({ title, subtitle }: Props) {
+  const { theme } = useTheme();
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
+      <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
+      {subtitle && (
+        <>
+          <Spacer height={4} />
+          <Text style={[styles.subtitle, { color: theme.colors.text }]}>
+            {subtitle}
+          </Text>
+        </>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  subtitle: {
+    fontSize: 14,
+  },
+});
+`.trim()
+  );
+
   fs.writeFileSync(
     "source/components/organisms/index.ts",
-    `// export { default as Header } from './Header';`
+    `export { default as Header } from './Header';`
   );
 
   fs.writeFileSync(
